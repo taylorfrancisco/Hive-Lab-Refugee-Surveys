@@ -6,6 +6,10 @@
 
 ## Folder Structure
 
-### src
-
 ### Data
+
+### Code
+
+### Documentation
+
+### Results
