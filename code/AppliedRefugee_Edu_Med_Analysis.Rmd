@@ -1,0 +1,98 @@
+---
+title: "AppliedRefugee_Edu_Med_Analysis"
+author: "Taylor Francisco"
+date: "2023-11-09"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+```{r load packages}
+library(tidyverse)
+library(stargazer)
+library(stringr)
+library(ggplot2)
+library(psych)
+library(plm)
+library(readr)
+```
+
+#Upload Merged Dataset
+
+```{r upload data}
+
+un_df <- read_csv("Merged_Clean_dataset1.csv")
+
+unique(un_df$AppliedRefugee) #nointention, Unknown, yes, no
+unique(un_df$Childinschool)#Not Applicable, yes, no, dontknow, notell
+unique(un_df$medicalReceived)#StronglyAgree" "Agree" "Disagree" "Undecided" "StronglyDisagree"
+
+```
+
+
+#Create df with the needed variables cleaned as needed
+```{r}
+# Set categorical variables as factors
+r_un_df <- un_df %>%
+  filter(Childinschool != "Not Applicable") %>% 
+  mutate(
+    Childinschool = factor(Childinschool, 
+                       labels = c("no",
+                                  "yes",
+                                  "dontknow",
+                                  "notell")),
+    AppliedRefugee = factor(AppliedRefugee, 
+                      labels = c("no", "yes", "nointention", "unknown")),
+    medicalReceived = factor(medicalReceived, 
+                      labels = c("StronglyDisagree", 
+                                 "Disagree",
+                                  "Undecided", 
+                                 "Agree", 
+                                 "StronglyAgree"))
+)
+
+class(r_un_df$AppliedRefugee)
+class(r_un_df$Childinschool)
+class(r_un_df$medicalReceived)
+```
+
+
+
+#Model 1- Applied and School 
+```{r}
+# Package for multinomial logistic regression
+library(nnet)
+
+logit1 <- multinom(Childinschool ~ AppliedRefugee, data = r_un_df)
+
+
+summary(logit1)
+# Option 2 for display
+# To transpose output results
+library(broom)
+#library(kableExtra)
+# To exponentiate results to get RRR
+#library(gtsummary)
+# To plot predicted values
+#library(ggeffects)
+# To get average marginal effect
+#library(marginaleffects)
+# For the Wald Test
+#library(car)
+tidy(logit1, conf.int = TRUE)
+
+```
+#Model 2- Applied and Medical 
+```{r}
+
+logit2 <- multinom(medicalReceived ~ AppliedRefugee, data = r_un_df)
+
+
+summary(logit2)
+
+tidy(logit2, conf.int = TRUE)
+```
+

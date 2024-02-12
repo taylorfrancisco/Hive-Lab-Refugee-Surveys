@@ -1,0 +1,173 @@
+---
+title: "Early_Key_Takeways_TRF"
+author: "Taylor Francisco"
+date: "2023-10-12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages}
+library(tidyverse)
+library(stargazer)
+library(stringr)
+library(ggplot2)
+library(psych)
+library(plm)
+library(readr)
+```
+
+
+#Upload 2 data tables
+
+```{r upload data}
+
+setwd("/Users/taylorfrancisco/Downloads/")
+
+CHL <- read_csv("UNHCR_CHL_2021_HFS_Q1Q2_v2.1.csv")
+
+COL <- read.csv("UNHCR_COL_2020_HFS_Q4_v2.1.csv")
+```
+
+CHL is from data collected from Chile. COL is data collected from Colombia. 
+Chile has 406 observations of 485 variables. Colombia has 622 observations of 586 variables. 
+Our team selected a set of 45 total variables that are common throughout most of 
+the surveys, which we are creating new data frames including only these variables 
+to allow us to create a dataframe with all the surveys with minimal desktop space. 
+
+#Data Cleaning (selecting variables)
+
+##CHL
+
+```{r}
+CHL_clean<- CHL %>% select(CountryOfAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed,  Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate, Childwhynotschool_nolanguage, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical, whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied)
+
+#missing variables from this dataset 
+#Childwhynotschool_familynot.
+
+```
+
+New clean dataset has 44 variables, as expected with one variable not collected 
+from this specific survey. 
+
+###Add year as variable 
+
+```{r}
+CHL_clean<- CHL_clean %>% mutate(Year = 2021)
+```
+
+
+###Save Cleaned DF as CSV
+In order to allow for this dataframe to be used by the rest of group, save as csv
+with name format chosen by Data Analysis team. 
+
+```{r}
+write.csv(CHL_clean, file = "HFS_Chile_2021_Q1Q2", row.names = FALSE) 
+```
+
+##COL
+
+```{r}
+
+COL_clean<- COL %>% select(progres_CountryofAsylum, nationality, ethnicity, intentionmove, AppliedRefugee, documentation_id, Childinschool, Childvirtualed,  Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_familynot, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate, Childwhynotschool_nolanguage, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical, whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied)
+
+
+#rename column that isn't same as needed final variable
+COL_clean = rename(COL_clean, CountryOfAsylum = progres_CountryofAsylum)
+
+
+#missing variables from this dataset 
+#TotalAdult, TotalMinor
+```
+
+New clean dataset has 43 variables, as expected with two variables not collected 
+from this specific survey.
+
+###Add year as variable 
+
+```{r}
+COL_clean<- COL_clean %>% mutate(Year = 2020)
+```
+
+###Save Cleaned DF as CSV
+
+```{r}
+write.csv(COL_clean, file = "HFS_Colombia_2020_Q4", row.names = FALSE) 
+
+```
+
+
+#Data Exploration 
+
+Exploring the nationalities represented in these two data sets
+```{r}
+unique(CHL_clean$nationality)
+unique(COL_clean$nationality)
+```
+#Graph of nationality 
+```{r}
+#combine dataframes
+library(dplyr)
+both <- bind_rows(CHL_clean, COL_clean)
+
+#factor nationality
+
+both$nationality.fact = as.factor(both$nationality)
+
+class(both$nationality.fact)
+
+nat_hist <- ggplot(both, aes(nationality.fact, fill = CountryOfAsylum))
+nat_hist + geom_histogram(stat = "count",  binwidth = .5, position = "dodge") +
+  labs( x = "Nationality", y = "count", 
+        title ="Nationality of Respondents") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+```
+  From the two countries of asylum (where the refugee is currently located), the 
+vast majority of the refugees are coming originally from Venezuela. This makes
+sense because both of this countries are in Latin America, so it would be 
+surprising to see refugees from another continent (e.g. Syria).
+  I am interested to see what it means that some of the refugees in Colombia say 
+their nationality is Colombia. Are they internally displaced and thus counted in
+the umbrella of refugees and internally displaced persons? We will have to check
+how the surveys we are using define refugee/IDPs. 
+  There is also a small amount of people who did not report there nationality 
+that does not have a label in this initial graph. 
+ Overall main takeaway is that themajority of refugees from these two surveys 
+are from Venezuela. 
+
+#Graph of Intention to move 
+```{r}
+#factor intentionmove
+unique(both$intentionmove)
+
+both$intentionmove.fact = as.factor(both$intentionmove)
+#both$intentionmove <- factor(both$intentionmove.fact, levels = c(1, 2, 3, 4), 
+                        #labels = c("stay", "relocate", "dontknow","notell" ), exclude = NA, ordered= FALSE)
+
+class(both$intentionmove.fact)
+
+
+
+
+move_hist <- ggplot(both, aes(intentionmove.fact, fill = CountryOfAsylum))
+move_hist + geom_histogram(stat = "count",  binwidth = .5, position = "dodge") +
+  labs( x = "Intention to Move", y = "count", 
+        title ="Intention to Move by Respondents") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+```
+  In both Chile and Colombia, the majority of refugee respondents intend to stay
+in the country they are seeking asylum in. There seems to be two much smaller 
+groups that are roughly equal of those who do not know what they plan to do and 
+those who plan to relocate. 
+  There is a very small amount of respondents that did not tell the surveyors 
+what their intentions are. 
+  It seems like Colombia and Chile are the final destination for these refugees. 
+I wonder if the other surveys my colleagues are analyzing show similar patterns
+in the countries included in their data sets. 
+
+
+
+

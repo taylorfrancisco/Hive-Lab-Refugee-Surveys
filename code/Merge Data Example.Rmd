@@ -1,0 +1,196 @@
+---
+title: "Merge data Example"
+author: "Yunhong Feng"
+date: '2023-10-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# These are the packages that is needed to clean data 
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+# Read all the data for the assigned country
+data2021q4<-read.csv("HFS_Panama_2021_Q4.csv")
+data2021q3<-read.csv("HFS_Panama_2021_Q3.csv")
+data2021q1q2<-read.csv("HFS_Panama_2021_Q1Q2.csv")
+data2020q4<-read.csv("HFS_Panama_2020_Q4.csv")
+
+#read in Suriname data 
+sdata2021q3<-read.csv("HFS_Suriname_2021_Q3.csv")
+
+
+
+```
+
+```{r}
+
+#datasets do not contain Childwhynotschool_familynot
+##data2021q1q2
+##data2021q3
+##data2021q4
+
+#Uppercase Year with CountryofAsylum, as wanted
+##data2021q1q2
+##data2020q4
+
+#Lowercase year with CountryOfAsylum, need to change
+##data2021q3
+##data2021q4
+
+#change to be CountryofAsylum with Year 
+
+data2021q3<- data2021q3 %>% mutate(Year = 2021, Quarter = "Q3", ID = row_number()) %>% rename(CountryofAsylum = CountryOfAsylum)
+data2021q4<- data2021q4 %>% mutate(Year = 2021, Quarter = "Q4", ID = row_number()) %>% rename(CountryofAsylum = CountryOfAsylum)
+
+#remove lower case year
+data2021q3 <- subset(data2021q3, select = -year)
+data2021q4 <- subset(data2021q4, select = -year)
+
+
+#mutate a new column to assign each participant a unique ID for two other datasets who do not need renaming
+data2021q1q2<- data2021q1q2 %>% mutate(Quarter = "Q1Q2", ID = row_number())
+data2020q4<- data2020q4 %>% mutate(Quarter = "Q4", ID = row_number())
+
+
+#This data dont contain the column "Childwhynotschool_familynot", so we mutate this column and set all entries = 0
+data2021q1q2<- data2021q1q2 %>% mutate(Childwhynotschool_familynot = 0)
+data2021q3<- data2021q3 %>% mutate(Childwhynotschool_familynot = 0)
+data2021q4<- data2021q4 %>% mutate(Childwhynotschool_familynot = 0)
+
+#all have the same number of variables and should have the same names of columns
+
+```
+same as above with Suriname
+```{r}
+#CountryOfAsylum, need to change to CountryofAsylum
+#Year capitalized, as wanted
+
+sdata2021q3<- sdata2021q3 %>% mutate(Year = 2021, Quarter = "Q3", ID = row_number()) %>% rename(CountryofAsylum = CountryOfAsylum)
+
+# does not contain Childwhynotschool_familynot
+sdata2021q3<- sdata2021q3 %>% mutate(Childwhynotschool_familynot = 0)
+```
+
+```{r}
+# Here for each original data, we separate them into 2. The first data (we call it A from now) contains all demographics and the reasons for not going to school. We first change all the reasons into long format: now all 33 reasons are fitted into 2 columns, 1 contains all the reasons(we call it "Reasons"); and the other one is Value(either na, 0, 1; 1 indicate someone chose this reason). After changed into long format, we can ignore the 33 reasons on the columns and only select the demographics and the two columns we just created(now this new data A should have 20 variables)
+
+data2021q1q2LongSchool<- data2021q1q2 %>% pivot_longer(cols = c(Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_familynot, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate, Childwhynotschool_nolanguage), names_to = "Reasons") %>% rename(Reason_whynotSchool = value) %>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed, Reasons,Reason_whynotSchool, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical) #A
+
+#Now for the second data contains reasons for not getting medical treatment. Again we change it into long format and only select columns that we need after that. This data B should have 6 variables 
+data2021q1q2LongMed<- data2021q1q2 %>% pivot_longer(cols = c(whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied), names_to = "Reasons") %>% rename(Reason_whynotMedical = value) %>% select(ID, Year, Quarter, CountryofAsylum,Reasons,Reason_whynotMedical) #B
+
+
+#repeat for Suriname 
+
+
+sdata2021q3LongSchool<- sdata2021q3 %>% pivot_longer(cols = c(Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_familynot, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate, Childwhynotschool_nolanguage), names_to = "Reasons") %>% rename(Reason_whynotSchool = value) %>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed, Reasons,Reason_whynotSchool, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical) #A
+
+sdata2021q3LongMed<- sdata2021q3 %>% pivot_longer(cols = c(whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied), names_to = "Reasons") %>% rename(Reason_whynotMedical = value) %>% select(ID, Year, Quarter, CountryofAsylum,Reasons,Reason_whynotMedical) #B
+
+```
+
+```{r}
+#Simply repeat this process with the rest of data sets. Note: some data may not have all the reasons for schooling, simply not including them in the pivot long function
+
+
+data2021q3LongSchool<- data2021q3 %>% pivot_longer(cols = c(Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate), names_to = "Reasons") %>% rename(Reason_whynotSchool = value) %>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed, Reasons,Reason_whynotSchool, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical) #A
+
+data2021q3LongMed<- data2021q3 %>% pivot_longer(cols = c(whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied), names_to = "Reasons") %>% rename(Reason_whynotMedical = value) %>% select(ID, Year, Quarter, CountryofAsylum, Reasons, Reason_whynotMedical) #B
+
+
+```
+
+```{r}
+#Repeat
+
+data2021q4LongSchool<- data2021q4%>% pivot_longer(cols = c(Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_familynot, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate), names_to = "Reasons") %>% rename(Reason_whynotSchool = value) %>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed, Reasons,Reason_whynotSchool, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical) #A
+
+data2021q4LongMed<- data2021q4 %>% pivot_longer(cols = c(whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied), names_to = "Reasons") %>% rename(Reason_whynotMedical = value)%>% select(ID, Year, Quarter, CountryofAsylum, Reasons, Reason_whynotMedical) #B
+
+```
+
+```{r}
+#Repeat
+
+
+data2020q4LongSchool<- data2020q4 %>% pivot_longer(cols = c(Childwhynotschool_nodocs, Childwhynotschool_nomoney, Childwhynotschool_failedschool,  Childwhynotschool_childwork, Childwhynotschool_fearschool, Childwhynotschool_disease, Childwhynotschool_disability, Childwhynotschool_helphome, Childwhynotschool_familynot, Childwhynotschool_noschools, Childwhynotschool_nointerest, Childwhynotschool_pregnancy, Childwhynotschool_nospot, Childwhynotschool_notransport, Childwhynotschool_discrimnation,  Childwhynotschool_discrimethnic, Childwhynotschool_finished, Childwhynotschool_recentlyarrive, Childwhynotschool_intransit, Childwhynotschool_noinfo, Childwhynotschool_toolate, Childwhynotschool_nolanguage), names_to = "Reasons") %>% rename(Reason_whynotSchool = value)%>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed, Reasons,Reason_whynotSchool, disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical) #A
+
+data2020q4LongMed<- data2020q4 %>% pivot_longer(cols = c(whynotMedical_nomoney, whynotMedical_noinsurance, whynotMedical_noID, whynotMedical_noinfo, whynotMedical_feararrested, whynotMedical_distance, whynotMedical_notavailable, whynotMedical_denied), names_to = "Reasons") %>% rename(Reason_whynotMedical = value)%>% select(ID, Year, Quarter, CountryofAsylum, Reasons, Reason_whynotMedical) #B
+
+
+```
+
+
+```{r}
+#Now we combine all A together into a new data set. This data set contains all demographics and reasons for not school in long format. 
+HFS_Panama <- rbind(data2021q1q2LongSchool, data2021q3LongSchool, data2021q4LongSchool, data2020q4LongSchool)
+
+# Separate out the demographic from it to form a new data. 
+HFS_Panama_Demo <- HFS_Panama %>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed,disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical)
+
+# Finally Remove duplicate and this is our final version for demo
+HFS_Panama_Demo <- HFS_Panama_Demo %>% group_by(Year, Quarter) %>%
+  distinct(ID, .keep_all = TRUE) %>% ungroup()
+
+
+#repeat non-merging steps for Suriname (only one quarter so just need to create the Demo, School, and Health tables)
+HFS_Suriname_Demo <- sdata2021q3LongSchool %>% select(ID, Year, Quarter, CountryofAsylum, nationality, ethnicity, intentionmove, TotalAdult, TotalMinor, AppliedRefugee, documentation_id, Childinschool, Childvirtualed,disabilityacc_disabilityserv, medicalReceived, RiskYes, RiskReturn_medical, RiskStay_medical)
+
+HFS_Suriname_Demo <- HFS_Suriname_Demo %>% group_by(Year, Quarter) %>%
+  distinct(ID, .keep_all = TRUE) %>% ungroup()
+```
+
+```{r}
+# Select the reasons for not schooling. We are only interested in those who answered this question, so remove na and 0
+HFS_Panama_School <- HFS_Panama %>% select(Year, Quarter, CountryofAsylum,Reasons, Reason_whynotSchool) %>% filter(!is.na(Reason_whynotSchool),Reason_whynotSchool != 0) %>% select(Year, Quarter, CountryofAsylum, Reasons)
+
+#this data now only contains reasons for not going to school
+
+
+#repeat for Suriname
+HFS_Suriname_School <- sdata2021q3LongSchool %>% select(Year, Quarter, CountryofAsylum,Reasons, Reason_whynotSchool) %>% filter(!is.na(Reason_whynotSchool),Reason_whynotSchool != 0) %>% select(Year, Quarter, CountryofAsylum, Reasons)
+```
+
+```{r}
+#Combine all B and Select the reasons for no medical. We are only interested in those who answered this question, so remove na and 0
+HFS_Panama_Medical <-rbind(data2021q1q2LongMed, data2021q3LongMed,data2021q4LongMed,data2020q4LongMed)
+
+HFS_Panama_Medical <- HFS_Panama_Medical %>% filter(!is.na(Reason_whynotMedical), Reason_whynotMedical != 0) %>% select(Year, Quarter, CountryofAsylum, Reasons)
+#this data now only contains reasons for not getting medical treatment 
+
+
+HFS_Panama_Demo %>% is.na() %>% colMeans()
+
+
+#repeat for Suriname
+
+HFS_Suriname_Medical <- sdata2021q3LongMed %>% filter(!is.na(Reason_whynotMedical), Reason_whynotMedical != 0) %>% select(Year, Quarter, CountryofAsylum, Reasons)
+                                     
+```
+
+
+Now we should have three final version of data, one for demo, one for reason for not going to school and one for reasons not getting the medical treatment. Export these three data into csv in the same format shown below (just change the country name) and upload to Github
+```{r}
+write.csv(HFS_Panama_Demo, file = "HFS_Panama_Demo.csv", row.names = FALSE)
+
+write.csv(HFS_Panama_School, file = "HFS_GPanama_SchoolReason.csv", row.names = FALSE)
+
+write.csv(HFS_Panama_Medical, file = "HFS_Panama_MedicalReason.csv", row.names = FALSE)
+
+#repeat for Suriname 
+
+write.csv(HFS_Suriname_Demo, file = "HFS_Suriname _Demo.csv", row.names = FALSE)
+
+write.csv(HFS_Suriname_School, file = "HFS_Suriname_SchoolReason.csv", row.names = FALSE)
+
+write.csv(HFS_Suriname_Medical, file = "HFS_Suriname_MedicalReason.csv", row.names = FALSE)
+```
+
+Thank You So Much !!!!!
